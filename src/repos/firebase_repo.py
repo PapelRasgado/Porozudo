@@ -180,13 +180,13 @@ async def get_finished_matches(mode, season):
     """
     Retrieve all finished matches with optional filtering by mode.
     """
-    query = (
-        db
-        .collection("matches")
-        .where(filter=FieldFilter("result", "!=", 'UNFINISHED'))
-        .where(filter=FieldFilter("timestamp", ">=", season.get("start")))
-        .where(filter=FieldFilter("timestamp", "<=", season.get("end")))
-    )
+    query = db.collection("matches").where(filter=FieldFilter("result", "!=", 'UNFINISHED'))
+
+    # Only add season filters if season is not None
+    if season is not None:
+        query = query.where(filter=FieldFilter("timestamp", ">=", season.get("start")))
+        query = query.where(filter=FieldFilter("timestamp", "<=", season.get("end")))
+
     if mode:
         query = query.where(filter=FieldFilter("mode", "==", mode))
     return list(query.stream())
@@ -282,4 +282,3 @@ async def create_new_season():
     await get_season_by_id.cache.clear()
 
     return result[1].get()
-
