@@ -1,0 +1,9 @@
+**/__pycache__/**
+.env
+credenciais_firebase.json
+
+lavalink/
+bot-env/
+resources/
+
+.idea/
