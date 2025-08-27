@@ -1,13 +1,12 @@
 import copy
 import os
+
 import firebase_admin
 from aiocache import cached
-from firebase_admin import credentials
-from firebase_admin import firestore
+from dotenv import load_dotenv
+from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1.base_query import FieldFilter, Or
 from google.cloud.firestore_v1.field_path import FieldPath
-
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -63,9 +62,11 @@ async def get_players_by_id(ids):
     """
     players_ref = db.collection("players")
     result = []
-    result.extend(players_ref.where(
-        filter=FieldFilter(FieldPath.document_id(), "in", [players_ref.document(_id) for _id in ids])
-    ).stream())
+    result.extend(
+        players_ref.where(
+            filter=FieldFilter(FieldPath.document_id(), "in", [players_ref.document(_id) for _id in ids])
+        ).stream()
+    )
     return list(result)
 
 
@@ -73,9 +74,7 @@ async def get_players_by_discord_id(discord_ids):
     """
     Get players whose Discord IDs are in the provided list.
     """
-    return db.collection("players").where(
-        filter=FieldFilter("discord_id", "in", discord_ids)
-    ).stream()
+    return db.collection("players").where(filter=FieldFilter("discord_id", "in", discord_ids)).stream()
 
 
 # Active Players Management
@@ -127,7 +126,7 @@ async def get_active_players():
 
         teams_discord = {
             "A": await get_players_by_id(player_list.get("A")),
-            "B": await get_players_by_id(player_list.get("B"))
+            "B": await get_players_by_id(player_list.get("B")),
         }
         return teams_discord
     else:
@@ -180,7 +179,7 @@ async def get_finished_matches(mode, season):
     """
     Retrieve all finished matches with optional filtering by mode.
     """
-    query = db.collection("matches").where(filter=FieldFilter("result", "!=", 'UNFINISHED'))
+    query = db.collection("matches").where(filter=FieldFilter("result", "!=", "UNFINISHED"))
 
     # Only add season filters if season is not None
     if season is not None:
@@ -189,6 +188,11 @@ async def get_finished_matches(mode, season):
 
     if mode:
         query = query.where(filter=FieldFilter("mode", "==", mode))
+    return list(query.stream())
+
+
+async def get_all_finished_matches():
+    query = db.collection("matches").where(filter=FieldFilter("result", "!=", "UNFINISHED"))
     return list(query.stream())
 
 
@@ -239,11 +243,7 @@ async def get_last_season():
     """
     Get last season.
     """
-    query = (
-        db.collection("seasons")
-        .order_by("id", direction=firestore.Query.DESCENDING)
-        .limit(1)
-    )
+    query = db.collection("seasons").order_by("id", direction=firestore.Query.DESCENDING).limit(1)
 
     return list(query.stream())[0]
 
@@ -253,11 +253,7 @@ async def get_season_by_id(season_id: int):
     """
     Get season by the specified id.
     """
-    query = (
-        db.collection("seasons")
-        .where(filter=FieldFilter("id", "==", season_id))
-        .limit(1)
-    )
+    query = db.collection("seasons").where(filter=FieldFilter("id", "==", season_id)).limit(1)
 
     result = list(query.stream())
 
@@ -269,11 +265,7 @@ async def create_new_season():
     Create a new season.
     """
     last_season = await get_last_season()
-    new_season = {
-        "id": last_season.get("id") + 1,
-        "start": firestore.SERVER_TIMESTAMP,
-        "end": last_season.get("end")
-    }
+    new_season = {"id": last_season.get("id") + 1, "start": firestore.SERVER_TIMESTAMP, "end": last_season.get("end")}
 
     db.collection("seasons").document(last_season.id).update({"end": firestore.SERVER_TIMESTAMP})
     result = db.collection("seasons").add(new_season)

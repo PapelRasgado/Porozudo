@@ -1,127 +1,140 @@
 import logging
-import repos.firebase_repo as repo
 
-from discord import Embed, User
+from discord import Color, Embed, User
 from discord.bot import Bot
 from discord.commands import ApplicationContext, Option, OptionChoice
-from utils.embed import create_match_history_embed
 
-logging.basicConfig(format='%(levelname)s %(name)s %(asctime)s: %(message)s', level=logging.INFO)
+from src.repos import match_repo, player_repo, stat_repo
+from src.repos.database import get_session
+from src.utils.embed import create_match_history_embed
+
+logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/stats")
 
 
 def register_stats_commands(bot: Bot):
     @bot.slash_command(name="vitorias", description="Quantifica as vitorias de cada jogador")
     async def victories(
-            ctx: ApplicationContext,
-            mode: Option(int, "Escolha o modo de jogo", default=0,
-                         choices=[OptionChoice("Todos", value=0), OptionChoice("5X5", value=5),
-                                  OptionChoice("4X4", value=4), OptionChoice("3X3", value=3)]),
-            season: Option(int, "Season", min_value=1, default=0)
+        ctx: ApplicationContext,
+        mode: Option(
+            int,
+            "Escolha o modo de jogo",
+            default=0,
+            choices=[
+                OptionChoice("Todos", value=0),
+                OptionChoice("5X5", value=5),
+                OptionChoice("4X4", value=4),
+                OptionChoice("3X3", value=3),
+            ],
+        ),
     ):
         await ctx.response.defer(ephemeral=True)
-        players = await repo.get_players()
+        with next(get_session()) as session:
+            stats = stat_repo.get_players_stat(session)
 
-        if season == 0:
-            season_ref = await repo.get_last_season()
-        else:
-            season_ref = await repo.get_season_by_id(season)
+            result_list = sorted(stats.values(), key=lambda x: x["wins"], reverse=True)
 
-        if season_ref is None:
-            await ctx.followup.send("Season invalida")
-            return
+            result_strings = [
+                f"{rank + 1}º - <@{player['discord_id']}> - {player['wins']} vitorias"
+                for rank, player in enumerate(result_list)
+            ]
 
-        matches = await repo.get_finished_matches(mode, season_ref)
+            embed = Embed(
+                title=f"Rankzudo {'Geral' if not mode else f'{mode}X{mode}'}", description="\n".join(result_strings)
+            )
 
-        stats = {player.id: {"id": player.get("discord_id"), "wins": 0} for player in players}
-
-        for match in matches:
-            winning_team = match.get("blue_team") if match.get("result") == "BLUE" else match.get("red_team")
-
-            for player_id in winning_team["players"]:
-                stats[player_id]["wins"] += 1
-
-        result_list = sorted(stats.items(), key=lambda x: x[1]["wins"], reverse=True)
-
-        result_strings = [
-            f"{rank + 1}º - <@{player['id']}> - {player['wins']} vitorias"
-            for rank, (_, player) in enumerate(result_list)
-        ]
-
-        embed = Embed(
-            title=f"Rankzudo {'Geral' if not mode else f'{mode}X{mode}'}",
-            description="\n".join(result_strings)
-        )
-
-        await ctx.followup.send(embed=embed)
+            await ctx.followup.send(embed=embed)
 
     @bot.slash_command(name="winrate", description="Quantifica o winrate de cada jogador")
     async def winrate(
-            ctx: ApplicationContext,
-            mode: Option(int, "Escolha o modo de jogo", name="modo", default=0,
-                         choices=[OptionChoice("Todos", value=0), OptionChoice("5X5", value=5),
-                                  OptionChoice("4X4", value=4), OptionChoice("3X3", value=3)]),
-            minimal: Option(int, "Quantidade minima de jogos", name="corte", default=10, min_value=1, max_value=30),
-            season: Option(int, "Season", min_value=1, default=0)
+        ctx: ApplicationContext,
+        mode: Option(
+            int,
+            "Escolha o modo de jogo",
+            name="modo",
+            default=0,
+            choices=[
+                OptionChoice("Todos", value=0),
+                OptionChoice("5X5", value=5),
+                OptionChoice("4X4", value=4),
+                OptionChoice("3X3", value=3),
+            ],
+        ),
+        minimal: Option(int, "Quantidade minima de jogos", name="corte", default=10, min_value=1, max_value=30),
     ):
         await ctx.response.defer(ephemeral=True)
-        players = await repo.get_players()
+        with next(get_session()) as session:
+            stats = stat_repo.get_players_stat(session)
 
-        if season == 0:
-            season_ref = await repo.get_last_season()
-        else:
-            season_ref = await repo.get_season_by_id(season)
+            filtered_stats = {player_id: data for player_id, data in stats.items() if data["games"] >= minimal}
 
-        if season_ref is None:
-            await ctx.followup.send("Season invalida")
-            return
+            result_list = sorted(filtered_stats.values(), key=lambda x: x["winrate"], reverse=True)
 
-        matches = await repo.get_finished_matches(mode, season_ref)
+            result_strings = [
+                f"{rank + 1}º - <@{player['discord_id']}> - {player['winrate']:.2f}% | {player['games']} jogos"
+                for rank, player in enumerate(result_list)
+            ]
 
-        stats = {player.id: {"id": player.get("discord_id"), "wins": 0, "losses": 0} for player in players}
+            embed = Embed(
+                title=f"Rankzudo {'Geral' if not mode else f'{mode}X{mode}'} - Mínimo de {minimal} jogos",
+                description="\n".join(result_strings),
+            )
 
-        for match in matches:
-            winning_team = match.get("blue_team") if match.get("result") == "BLUE" else match.get("red_team")
-            losing_team = match.get("red_team") if match.get("result") == "BLUE" else match.get("blue_team")
-
-            for player_id in winning_team["players"]:
-                stats[player_id]["wins"] += 1
-
-            for player_id in losing_team["players"]:
-                stats[player_id]["losses"] += 1
-
-        result_list = []
-        for player_id, stat in stats.items():
-            total_matches = stat["wins"] + stat["losses"]
-            if total_matches >= minimal:
-                result = (stat["wins"] / total_matches) * 100 if total_matches > 0 else 0
-                result_list.append({"id": stat["id"], "winrate": result, "games": total_matches})
-
-        result_list = sorted(result_list, key=lambda x: x["winrate"], reverse=True)
-
-        result_strings = [
-            f"{rank + 1}º - <@{player['id']}> - {player['winrate']:.2f}% | {player['games']} jogos"
-            for rank, player in enumerate(result_list)
-        ]
-
-        embed = Embed(
-            title=f"Rankzudo {'Geral' if not mode else f'{mode}X{mode}'} - Mínimo de {minimal} jogos",
-            description="\n".join(result_strings)
-        )
-
-        await ctx.followup.send(embed=embed)
+            await ctx.followup.send(embed=embed)
 
     @bot.slash_command(name="historico", description="Exibe o historico de partidas de um jogador")
     async def match_history(
-            ctx: ApplicationContext,
-            user: Option(User, "Usuário a ser consultado", name="usuário", required=False),
-            limit: Option(int, "Limite de partidas", name="limite", default=10, min_value=1, max_value=50)
+        ctx: ApplicationContext,
+        user: Option(User, "Usuário a ser consultado", name="usuário", required=False),
+        limit: Option(int, "Limite de partidas", name="limite", default=10, min_value=1, max_value=50),
     ):
         await ctx.response.defer(ephemeral=True)
-        player = await repo.get_player_by_discord_id(user.id if user else ctx.author.id)
+        with next(get_session()) as session:
+            player = player_repo.get_player_by_discord(session, user.id if user else ctx.author.id)
 
-        matches = await repo.get_matches_by_player(player.id, limit)
+            matches = match_repo.get_all_by_player(session, player.id, limit)
 
-        embed = create_match_history_embed(matches, player)
+            embed = create_match_history_embed(matches, player)
+
+            await ctx.followup.send(embed=embed)
+
+    @bot.slash_command(name="elo", description="Mostra o ranking de Elo dos jogadores.")
+    async def ranking(ctx: ApplicationContext):
+        await ctx.response.defer(ephemeral=True)
+
+        with next(get_session()) as session:
+            all_ranked_players = player_repo.get_all_players_ranked(session)
+
+        if not all_ranked_players:
+            await ctx.followup.send("Ainda não há jogadores no ranking.")
+            return
+
+        author_id = str(ctx.user.id)
+        author_rank_data = None
+        for rank, player in enumerate(all_ranked_players, start=1):
+            if player.discord_id == author_id:
+                author_rank_data = {"rank": rank, "player": player}
+                break
+
+        top_players = all_ranked_players[:10]
+
+        embed = Embed(title="🏆 Ranking de Elo", color=Color.gold())
+
+        top_description = []
+        rank_emojis = {1: "🥇", 2: "🥈", 3: "🥉"}
+
+        for rank, player in enumerate(top_players, start=1):
+            emoji = rank_emojis.get(rank, f"**{rank}.**")
+            top_description.append(f"{emoji} {player.username} - `{player.points}` Pontos")
+
+        embed.description = "\n".join(top_description)
+
+        if author_rank_data and author_rank_data["rank"] > 10:
+            author = author_rank_data["player"]
+            embed.add_field(
+                name="Sua Posição",
+                value=f"**{author_rank_data['rank']}.** {author.username} - `{author.points}` Pontos",
+                inline=False,
+            )
 
         await ctx.followup.send(embed=embed)

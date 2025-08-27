@@ -1,5 +1,6 @@
 from langchain.embeddings.base import Embeddings
 
+
 class E5Embeddings(Embeddings):
     def __init__(self, model):
         self.model = model
