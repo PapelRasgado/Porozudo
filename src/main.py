@@ -78,7 +78,7 @@ async def on_ready():
     await bot.change_presence(
         activity=Activity(type=ActivityType.custom, name="custom", state="Fraudando as runas....")
     )
-    #await connect_nodes()
+    # await connect_nodes()
 
 
 def main():

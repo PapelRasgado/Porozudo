@@ -158,5 +158,5 @@ class ResultButtons(discord.ui.View):
             else:
                 await interaction.message.edit(view=None)
                 await interaction.message.reply(
-                    f"Vitoria para o time {'azul' if result == TeamSide.blue else 'vermelho'}! (Definido por {interaction.user.mention})")
-
+                    f"Vitoria para o time {'azul' if result == TeamSide.blue else 'vermelho'}! (Definido por {interaction.user.mention})"
+                )
