@@ -5,10 +5,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY src/ /src/
-COPY resources/ /app/resources/
-ADD credenciais_firebase.json requirements.txt .
+COPY ./src ./src
+ADD requirements.txt .
 RUN pip install -r requirements.txt
 RUN pip uninstall discord.py py-cord -y
 RUN pip install py-cord
-CMD ["python", "/src/main.py"]
+CMD ["python", "-m", "src.main"]

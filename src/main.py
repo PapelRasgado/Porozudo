@@ -9,12 +9,11 @@ from discord.bot import Bot
 from discord.ext import tasks
 from dotenv import load_dotenv
 
-from commands.config import register_config_commands
-
 # from index_pdf import process_pdfs
-from commands.match import register_match_commands
-from commands.music import register_music_commands
-from commands.stats import register_stats_commands
+from src.commands.config import register_config_commands
+from src.commands.match import register_match_commands
+from src.commands.music import register_music_commands
+from src.commands.stats import register_stats_commands
 from src.repos.champions_repo import ImageDict
 
 # from commands.rpg import register_rpg_commands
