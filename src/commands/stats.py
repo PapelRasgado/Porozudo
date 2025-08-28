@@ -125,7 +125,7 @@ def register_stats_commands(bot: Bot):
 
         for rank, player in enumerate(top_players, start=1):
             emoji = rank_emojis.get(rank, f"**{rank}.**")
-            top_description.append(f"{emoji} {player.username} - `{player.points}` Pontos")
+            top_description.append(f"{emoji} <@{player.discord_id}> - `{player.points}` Pontos")
 
         embed.description = "\n".join(top_description)
 
@@ -133,7 +133,7 @@ def register_stats_commands(bot: Bot):
             author = author_rank_data["player"]
             embed.add_field(
                 name="Sua Posição",
-                value=f"**{author_rank_data['rank']}.** {author.username} - `{author.points}` Pontos",
+                value=f"**{author_rank_data['rank']}.** <@{author.discord_id}> - `{author.points}` Pontos",
                 inline=False,
             )
 
