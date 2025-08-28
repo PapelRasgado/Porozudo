@@ -1,164 +1,78 @@
-import random
+import itertools
 import logging
-import repos.firebase_repo as repo
+import math
+import random
 
-logging.basicConfig(format='%(levelname)s %(name)s %(asctime)s: %(message)s', level=logging.INFO)
+from src.model.database import Team, TeamSide
+
+logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("team_generator")
 
 
-async def calculate_player_ratings(players, all_seasons=False):
-    """
-    Calculate player ratings based on their match history.
-    Returns a dict with player_id -> rating
-    """
-    if all_seasons:
-        # Get matches from all seasons by not filtering by season
-        matches = await repo.get_finished_matches(0, None)
-    else:
-        season_ref = await repo.get_last_season()
-        matches = await repo.get_finished_matches(0, season_ref)
+def generate_teams(players, champions, choices_number):
+    team_size = len(players) // 2
 
-    # Initialize stats for all players
-    stats = {}
-    for player in players:
-        player_id = player.id if hasattr(player, 'id') else player
-        stats[player_id] = {"wins": 0, "losses": 0, "games": 0}
-
-    # Calculate stats from matches
-    for match in matches:
-        winning_team = match.get("blue_team") if match.get("result") == "BLUE" else match.get("red_team")
-        losing_team = match.get("red_team") if match.get("result") == "BLUE" else match.get("blue_team")
-
-        for player_id in winning_team["players"]:
-            if player_id in stats:
-                stats[player_id]["wins"] += 1
-                stats[player_id]["games"] += 1
-
-        for player_id in losing_team["players"]:
-            if player_id in stats:
-                stats[player_id]["losses"] += 1
-                stats[player_id]["games"] += 1
-
-    # Calculate dynamic confidence threshold based on match distribution
-    total_matches = len(matches)
-    games_played = [stat["games"] for stat in stats.values() if stat["games"] > 0]
-
-    if not games_played:
-        # No games played by anyone, use baseline for all
-        confidence_threshold = 1
-        logger.info("No games found, using baseline ratings")
-    else:
-        # Calculate statistics about game distribution
-        avg_games = sum(games_played) / len(games_played)
-        max_games = max(games_played)
-
-        # Dynamic threshold: 25% of average games or minimum 3, maximum 15
-        confidence_threshold = max(3, min(15, int(avg_games * 0.25)))
-
-        logger.info(f"Match analysis: Total={total_matches}, Avg games/player={avg_games:.1f}, Max games={max_games}, Confidence threshold={confidence_threshold}")
-
-    # Calculate rating for each player using confidence-weighted system
-    ratings = {}
-    baseline_winrate = 0.5  # 50% baseline
-
-    for player in players:
-        player_id = player.id if hasattr(player, 'id') else player
-        stat = stats[player_id]
-
-        if stat["games"] == 0:
-            # No games played, use baseline
-            rating = baseline_winrate * 100
-        else:
-            # Calculate raw winrate
-            raw_winrate = stat["wins"] / stat["games"]
-
-            # Calculate confidence factor (0 to 1)
-            # Players with fewer games get pulled toward the baseline
-            confidence = min(stat["games"] / confidence_threshold, 1.0)
-
-            # Weighted average between raw winrate and baseline
-            # More games = more weight to raw winrate
-            # Fewer games = more weight to baseline (regression to mean)
-            adjusted_winrate = (confidence * raw_winrate) + ((1 - confidence) * baseline_winrate)
-
-            rating = adjusted_winrate * 100
-
-        ratings[player_id] = rating
-        logger.info(f"Player {player_id}: {stat['wins']}-{stat['losses']} | Confidence: {min(stat['games'] / confidence_threshold, 1.0):.2f} | Rating: {rating:.1f}")
-
-    return ratings
-
-
-def balance_teams(players, ratings):
-    """
-    Balance teams based on player ratings to minimize rating difference.
-    """
     if len(players) % 2 != 0:
         raise ValueError("The number of players must be even")
 
-    team_size = len(players) // 2
+    all_combinations = list(itertools.combinations(players, team_size))
 
-    # Sort players by rating (highest to lowest)
-    sorted_players = sorted(players, key=lambda p: ratings.get(p.id if hasattr(p, 'id') else p, 50), reverse=True)
+    num_unique_matches = math.ceil(len(all_combinations) / 2)
 
-    # Use a simple alternating draft system
-    red_team = []
-    blue_team = []
+    matchups = []
 
-    for i, player in enumerate(sorted_players):
-        if i % 2 == 0:
-            red_team.append(player)
-        else:
-            blue_team.append(player)
+    all_players_set = set(players)
 
-    # Calculate team ratings
-    red_rating = sum(ratings.get(p.id if hasattr(p, 'id') else p, 50) for p in red_team) / len(red_team)
-    blue_rating = sum(ratings.get(p.id if hasattr(p, 'id') else p, 50) for p in blue_team) / len(blue_team)
+    for i in range(num_unique_matches):
+        team_a = list(all_combinations[i])
+        team_b = list(all_players_set.difference(team_a))
 
-    logger.info(f"Team balance - Red: {red_rating:.1f}, Blue: {blue_rating:.1f}, Diff: {abs(red_rating - blue_rating):.1f}")
+        rating_a = sum(player.points for player in team_a) / team_size
+        rating_b = sum(player.points for player in team_b) / team_size
 
-    return red_team, blue_team
+        elo_difference = abs(rating_a - rating_b)
 
-
-async def generate_team(players, champions, fixed_teams, choices_number, all_seasons=False):
-    if fixed_teams:
-        team_size = len(players.get("A"))
-        red_team_players, blue_team_players = (
-            players.get("A"), players.get("B")
-        ) if random.randint(0, 1) else (
-            players.get("B"), players.get("A")
+        matchups.append(
+            {
+                "team_a": team_a,
+                "team_b": team_b,
+                "rating_a": rating_a,
+                "rating_b": rating_b,
+                "elo_difference": elo_difference,
+            }
         )
-    else:
-        team_size = len(players) // 2
 
-        if team_size is None:
-            if len(players) % 2 != 0:
-                raise ValueError("The number of players must be even")
+    matchups.sort(key=lambda x: x["elo_difference"])
 
-        # Use matchmaking to balance teams instead of random shuffle
-        try:
-            ratings = await calculate_player_ratings(players, all_seasons)
-            red_team_players, blue_team_players = balance_teams(players, ratings)
-        except Exception as e:
-            logger.warning(f"Matchmaking failed, falling back to random: {e}")
-            # Fallback to random if matchmaking fails
-            random.shuffle(players)
-            red_team_players = players[:len(players) // 2]
-            blue_team_players = players[len(players) // 2:]
+    pool_size = min(10, len(matchups) // 2)
 
-    red_team_champion_names = []
-    blue_team_champion_names = []
+    if pool_size == 0 and len(matchups) > 0:
+        pool_size = len(matchups)
+
+    good_matches_pool = matchups[:pool_size]
+
+    chosen_match = random.choice(good_matches_pool)
+
+    team_a_champion_names = []
+    team_b_champion_names = []
 
     for i in range(choices_number if choices_number else team_size * 2):
-        choice_blue = random.randint(0, len(champions) - 1)
-        blue_team_champion_names.append(champions[choice_blue])
-        del champions[choice_blue]
+        choice_a = random.randint(0, len(champions) - 1)
+        team_a_champion_names.append(champions[choice_a])
+        del champions[choice_a]
 
-        choice_red = random.randint(0, len(champions) - 1)
-        red_team_champion_names.append(champions[choice_red])
-        del champions[choice_red]
+        choice_b = random.randint(0, len(champions) - 1)
+        team_b_champion_names.append(champions[choice_b])
+        del champions[choice_b]
 
-    return {
-        "red_team": {"champions": red_team_champion_names, "players": red_team_players},
-        "blue_team": {"champions": blue_team_champion_names, "players": blue_team_players},
-    }
+    teams = [
+        Team(champions=team_a_champion_names, players=chosen_match["team_a"], team_rating=chosen_match["rating_a"]),
+        Team(champions=team_b_champion_names, players=chosen_match["team_b"], team_rating=chosen_match["rating_b"]),
+    ]
+
+    random.shuffle(teams)
+
+    teams[0].side = TeamSide.blue
+    teams[1].side = TeamSide.red
+
+    return teams

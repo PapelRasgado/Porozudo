@@ -1,32 +1,40 @@
 import asyncio
-import os
+import datetime
 import logging
-import wavelink
+import os
 
+import wavelink
 from discord import Activity, ActivityType
 from discord.bot import Bot
+from discord.ext import tasks
 from dotenv import load_dotenv
 
-# from index_pdf import process_pdfs
-
-from commands.match import register_match_commands
-from commands.stats import register_stats_commands
 from commands.config import register_config_commands
+
+# from index_pdf import process_pdfs
+from commands.match import register_match_commands
 from commands.music import register_music_commands
-#from commands.rpg import register_rpg_commands
+from commands.stats import register_stats_commands
+from src.repos.champions_repo import ImageDict
+
+# from commands.rpg import register_rpg_commands
 from src.repos.database import create_db_and_tables
 
-logging.basicConfig(format='%(levelname)s %(name)s %(asctime)s: %(message)s', level=logging.INFO)
+logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("main")
 
 load_dotenv()
 bot = Bot()
+
+champion_data = ImageDict()
+
 register_stats_commands(bot)
-register_match_commands(bot)
+register_match_commands(bot, champion_data)
 register_config_commands(bot)
 register_music_commands(bot)
-#register_rpg_commands(bot)
+# register_rpg_commands(bot)
 # process_pdfs()
+
 
 async def connect_nodes():
     await bot.wait_until_ready()
@@ -41,22 +49,34 @@ async def connect_nodes():
             uri=f"http://{LAVALINK_URL}:{LAVALINK_PORT}",
             password=LAVALINK_PASSWORD,
             inactive_player_timeout=60,
-            inactive_channel_tokens=1
+            inactive_channel_tokens=1,
         )
     ]
 
-    await wavelink.Pool.connect(nodes=nodes, client=bot, )
+    await wavelink.Pool.connect(
+        nodes=nodes,
+        client=bot,
+    )
+
+
+@tasks.loop(hours=24)
+async def daily_champion_update():
+    logger.info("Updating champion data")
+    try:
+        champion_data.update_data()
+        logger.info("Champion data updated.")
+    except Exception as e:
+        logger.error(f"Failed to update champion data: {e}")
+
+
+daily_champion_update.change_interval(time=datetime.time(hour=6, minute=0))
 
 
 @bot.event
 async def on_ready():
     logger.info(f"{bot.user} tá on pai!")
     await bot.change_presence(
-        activity=Activity(
-            type=ActivityType.custom,
-            name="custom",
-            state="Fraudando as runas...."
-        )
+        activity=Activity(type=ActivityType.custom, name="custom", state="Fraudando as runas....")
     )
     await connect_nodes()
 
