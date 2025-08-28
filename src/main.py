@@ -9,7 +9,6 @@ from discord.bot import Bot
 from discord.ext import tasks
 from dotenv import load_dotenv
 
-
 # from index_pdf import process_pdfs
 from src.commands.config import register_config_commands
 from src.commands.match import register_match_commands

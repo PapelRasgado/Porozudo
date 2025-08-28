@@ -6,8 +6,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 COPY ./src ./src
-COPY resources/ /app/resources/
-ADD credenciais_firebase.json requirements.txt .
+ADD requirements.txt .
 RUN pip install -r requirements.txt
 RUN pip uninstall discord.py py-cord -y
 RUN pip install py-cord
