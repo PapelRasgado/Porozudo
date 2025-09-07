@@ -98,3 +98,8 @@ def register_rpg_commands(bot: Bot):
 
         except Exception as e:
             await ctx.send(f"⚠ Erro ao processar pergunta: {str(e)}")
+
+
+def setup(bot):
+    # bot.add_cog(RPGCog(bot))
+    logger.info("Disabled")

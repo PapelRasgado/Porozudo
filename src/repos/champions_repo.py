@@ -32,7 +32,7 @@ def get_last_league_version():
 
 
 def download_champion_data(version):
-    url = f"{BASE_API_URL}/cdn/{version}/data/en_US/champion.json"
+    url = f"{BASE_API_URL}/cdn/{version}/data/pt_BR/champion.json"
 
     response = requests.get(url)
 
@@ -49,7 +49,11 @@ def download_champion_data(version):
                     champion_name = q.get(block=False)
                     logger.info(f"Downloading champion {champion_name}")
                     image = download_champion_image(version, champion_name)
-                    champions_data[champion_name] = {"name": champions[champion_name]["name"], "image": image}
+                    champions_data[champions[champion_name]["key"]] = {
+                        "name": champions[champion_name]["name"],
+                        "image": image,
+                        "id": champions[champion_name]["key"],
+                    }
                     q.task_done()
                 except Empty:
                     finished = True
@@ -82,8 +86,8 @@ def get_champions():
             if cached_version == latest_version:
                 logger.info("Using cached champions data.")
                 champions_data = {
-                    name: {"name": d["name"], "image": bytes.fromhex(d["image"])}
-                    for name, d in cache["champions"].items()
+                    _id: {"name": d["name"], "image": bytes.fromhex(d["image"]), "id": d["id"]}
+                    for _id, d in cache["champions"].items()
                 }
                 return champions_data
 
@@ -93,11 +97,16 @@ def get_champions():
     with open(CACHE_FILE, "w") as f:
         cache_data = {
             "version": latest_version,
-            "champions": {name: {"name": d["name"], "image": d["image"].hex()} for name, d in champions_data.items()},
+            "champions": {
+                _id: {"name": d["name"], "image": d["image"].hex(), "id": d["id"]} for _id, d in champions_data.items()
+            },
         }
         json.dump(cache_data, f, indent=4)
 
-    return {name: {"name": d["name"], "image": bytes.fromhex(d["image"].hex())} for name, d in champions_data.items()}
+    return {
+        _id: {"name": d["name"], "image": bytes.fromhex(d["image"].hex()), "id": d["id"]}
+        for _id, d in champions_data.items()
+    }
 
 
 class ImageDict(dict):

@@ -13,6 +13,7 @@ class TeamSide(str, Enum):
 
 class Player(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
+    puuid: Optional[str] = Field(default=None, index=True)
     username: str = Field(index=True)
     discord_id: Optional[str] = Field(index=True)
     points: int = Field(default=1500)
@@ -36,10 +37,12 @@ class Match(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.now, nullable=False)
     mode: int = Field(ge=1, le=5)
     season_id: Optional[int] = Field(default=None, foreign_key="season.id")
+    champions_registered: bool = Field(default=False, nullable=False)
 
     season: "Season" = Relationship(back_populates="matches")
     result: Optional[TeamSide]
     teams: List["Team"] = Relationship(back_populates="match")
+    elo_history: List["PlayerEloHistory"] = Relationship()
 
 
 class Team(SQLModel, table=True):
@@ -69,8 +72,14 @@ class PlayerEloHistory(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     player_id: int = Field(foreign_key="player.id", index=True)
     match_id: Optional[int] = Field(default=None, foreign_key="match.id", index=True)
-
+    is_reverted: bool = Field(default=False, nullable=False)
+    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
     points_before: int
     points_after: int
+    change: Optional[int]
 
-    created_at: datetime = Field(default_factory=datetime.now, nullable=False)
+
+class PlayerMatchChampion(SQLModel, table=True):
+    player_id: int = Field(primary_key=True, foreign_key="player.id", index=True)
+    match_id: int = Field(primary_key=True, foreign_key="match.id", index=True)
+    champion_id: str = Field(index=True)

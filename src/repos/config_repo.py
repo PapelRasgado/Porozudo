@@ -6,7 +6,8 @@ from src.model.database import ActivePlayer, Player
 
 
 def add_to_pool(session: Session, players: List[Player]):
-    active_players = [ActivePlayer(player_id=player.id) for player in players]
+    actual_pool = set(get_pool_players(session))
+    active_players = [ActivePlayer(player_id=player.id) for player in players if player not in actual_pool]
     session.add_all(active_players)
     session.commit()
 

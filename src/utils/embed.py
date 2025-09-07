@@ -13,8 +13,8 @@ def create_image_from_champions(champions_list: list[str], data: ImageDict) -> i
 
     x_offset = 10
     y_offset = 10
-    for idx, champion in enumerate(champions_list):
-        champion_data = data[champion]
+    for idx, _id in enumerate(champions_list):
+        champion_data = data[_id]
         img = Image.open(io.BytesIO(champion_data["image"]))
         new_im.paste(img, (x_offset, y_offset))
 
@@ -45,7 +45,7 @@ def create_champion_embed(champions_list: list[str], data: ImageDict, colour: di
             "personalizada. <a:calabreso:1320528277873365012>\n\n```haskell\n"
         )
 
-    embed_description += "\n".join([data[champ]["name"] for champ in champions_list]) + "\n```"
+    embed_description += "\n".join([data[_id]["name"] for _id in champions_list]) + "\n```"
 
     image_buffer = create_image_from_champions(champions_list, data)
     embed = discord.Embed(

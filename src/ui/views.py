@@ -2,9 +2,10 @@ import logging
 
 import discord
 
-from src.model.database import PlayerEloHistory, TeamSide
-from src.repos import config_repo, elo_repo, match_repo, player_repo
+from src.model.database import TeamSide
+from src.repos import config_repo, match_repo, player_repo
 from src.repos.database import get_session
+from src.service import match_service
 from src.utils.embed import create_active_players_embed
 
 logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
@@ -113,40 +114,7 @@ class ResultButtons(discord.ui.View):
 
             match.result = result
 
-            blue_team = next((t for t in match.teams if t.side == TeamSide.blue), None)
-            red_team = next((t for t in match.teams if t.side == TeamSide.red), None)
-
-            if result == TeamSide.blue:
-                winning_team_obj, losing_team_obj = blue_team, red_team
-            else:
-                winning_team_obj, losing_team_obj = red_team, blue_team
-
-            k_factor = {1: 1, 2: 1, 3: 5, 4: 10, 5: 20}.get(match.mode, 10)
-
-            expected_win_prob = 1 / (1 + 10 ** ((losing_team_obj.team_rating - winning_team_obj.team_rating) / 400))
-            point_change = round(k_factor * (1 - expected_win_prob))
-            point_change = max(1, point_change)
-
-            for player in winning_team_obj.players:
-                points_before = player.points
-                player.points += point_change
-                history = PlayerEloHistory(
-                    player_id=player.id, match_id=match.id, points_before=points_before, points_after=player.points
-                )
-                elo_repo.create_history(session, history)
-
-            for player in losing_team_obj.players:
-                points_before = player.points
-                player.points -= point_change
-                history = PlayerEloHistory(
-                    player_id=player.id, match_id=match.id, points_before=points_before, points_after=player.points
-                )
-                elo_repo.create_history(session, history)
-
-            match_repo.update(session, match)
-            logger.info(
-                f"Match {self.match_id} finished. Winner: {result.value}. Elo change: +/- {point_change} points."
-            )
+            match_service.finalize_match(session, match, result)
 
             embeds = interaction.message.embeds
 

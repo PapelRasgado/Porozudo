@@ -7,9 +7,10 @@ import typing
 
 import wavelink
 from discord import ClientException, Color, Embed, Option, OptionChoice, commands
-from discord.bot import Bot
 from discord.cog import Cog
 from discord.commands import ApplicationContext
+
+from src.config import LAVALINK_PASSWORD, LAVALINK_PORT, LAVALINK_URL
 
 logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/music")
@@ -37,9 +38,30 @@ def parse_duration(duration: int):
     return ", ".join(duration)
 
 
-class Music(Cog):
+class MusicCog(Cog):
     def __init__(self, bot):
         self.bot = bot
+
+    @Cog.listener()
+    async def on_ready(self):
+        logger.info("MusicCog está pronta, conectando ao Lavalink...")
+        try:
+            nodes = [
+                wavelink.Node(
+                    identifier="Node",
+                    uri=f"http://{LAVALINK_URL}:{LAVALINK_PORT}",
+                    password=LAVALINK_PASSWORD,
+                    inactive_player_timeout=60,
+                    inactive_channel_tokens=1,
+                )
+            ]
+
+            await wavelink.Pool.connect(
+                nodes=nodes,
+                client=self.bot,
+            )
+        except Exception as e:
+            logger.error(f"Falha ao conectar ao Lavalink: {e}")
 
     @Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
@@ -316,5 +338,5 @@ class Music(Cog):
             await ctx.respond(embed=Embed(description="Loop ligado para a playlist. <a:loop:1362182672952066108>"))
 
 
-def register_music_commands(bot: Bot):
-    bot.add_cog(Music(bot))
+def setup(bot):
+    bot.add_cog(MusicCog(bot))

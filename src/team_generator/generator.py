@@ -58,11 +58,11 @@ def generate_teams(players, champions, choices_number):
 
     for i in range(choices_number if choices_number else team_size * 2):
         choice_a = random.randint(0, len(champions) - 1)
-        team_a_champion_names.append(champions[choice_a])
+        team_a_champion_names.append(champions[choice_a]["id"])
         del champions[choice_a]
 
         choice_b = random.randint(0, len(champions) - 1)
-        team_b_champion_names.append(champions[choice_b])
+        team_b_champion_names.append(champions[choice_b]["id"])
         del champions[choice_b]
 
     teams = [

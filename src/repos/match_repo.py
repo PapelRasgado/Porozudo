@@ -23,6 +23,10 @@ def get_all_by_player(session: Session, player_id: int, limit: int) -> List[Matc
     return session.exec(query).all()
 
 
+def get_all(session: Session) -> List[Match]:
+    return session.exec(select(Match)).all()
+
+
 def create(session: Session, match: Match) -> Match:
     match_db = Match.model_validate(match)
 

@@ -1,9 +1,10 @@
 import logging
 
-from discord import Color, Embed, User
-from discord.bot import Bot
+from discord import Cog, Color, Embed, User
 from discord.commands import ApplicationContext, Option, OptionChoice
+from discord.ext import commands
 
+from src.main import PorozudoBot
 from src.repos import match_repo, player_repo, stat_repo
 from src.repos.database import get_session
 from src.utils.embed import create_match_history_embed
@@ -12,9 +13,13 @@ logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", le
 logger = logging.getLogger("c/stats")
 
 
-def register_stats_commands(bot: Bot):
-    @bot.slash_command(name="vitorias", description="Quantifica as vitorias de cada jogador")
+class StatsCog(Cog):
+    def __init__(self, bot: "PorozudoBot"):
+        self.bot = bot
+
+    @commands.slash_command(name="vitorias", description="Quantifica as vitorias de cada jogador")
     async def victories(
+        self,
         ctx: ApplicationContext,
         mode: Option(
             int,
@@ -45,8 +50,9 @@ def register_stats_commands(bot: Bot):
 
             await ctx.followup.send(embed=embed)
 
-    @bot.slash_command(name="winrate", description="Quantifica o winrate de cada jogador")
+    @commands.slash_command(name="winrate", description="Quantifica o winrate de cada jogador")
     async def winrate(
+        self,
         ctx: ApplicationContext,
         mode: Option(
             int,
@@ -82,8 +88,9 @@ def register_stats_commands(bot: Bot):
 
             await ctx.followup.send(embed=embed)
 
-    @bot.slash_command(name="historico", description="Exibe o historico de partidas de um jogador")
+    @commands.slash_command(name="historico", description="Exibe o historico de partidas de um jogador")
     async def match_history(
+        self,
         ctx: ApplicationContext,
         user: Option(User, "Usuário a ser consultado", name="usuário", required=False),
         limit: Option(int, "Limite de partidas", name="limite", default=10, min_value=1, max_value=50),
@@ -98,8 +105,8 @@ def register_stats_commands(bot: Bot):
 
             await ctx.followup.send(embed=embed)
 
-    @bot.slash_command(name="elo", description="Mostra o ranking de Elo dos jogadores.")
-    async def ranking(ctx: ApplicationContext):
+    @commands.slash_command(name="elo", description="Mostra o ranking de Elo dos jogadores.")
+    async def ranking(self, ctx: ApplicationContext):
         await ctx.response.defer(ephemeral=True)
 
         with next(get_session()) as session:
@@ -138,3 +145,10 @@ def register_stats_commands(bot: Bot):
             )
 
         await ctx.followup.send(embed=embed)
+
+
+def setup(bot):
+    try:
+        bot.add_cog(StatsCog(bot))
+    except Exception as e:
+        logger.info(e)

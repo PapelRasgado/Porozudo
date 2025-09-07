@@ -16,3 +16,6 @@ wavelink
 #langdetect
 sqlmodel==0.0.24
 SQLAlchemy~=2.0.40
+alembic
+pydantic
+aiohttp
