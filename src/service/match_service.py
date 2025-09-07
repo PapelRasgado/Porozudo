@@ -87,7 +87,7 @@ class MatchService:
 
                     if participant_data:
                         info = PlayerMatchChampion(
-                            player_id=player.id, match_id=match_id, champion_id=participant_data.champion_id
+                            player_id=player.id, match_id=match_id, champion_id=str(participant_data.champion_id)
                         )
                         self._player_champion_repo.create_player_champion(session, info)
 

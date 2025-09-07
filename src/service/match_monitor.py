@@ -9,7 +9,6 @@ from src.client.riot_client import RiotAPIClient
 from src.model.database import Player
 from src.service.match_service import MatchService
 
-
 logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/champions_m")
 

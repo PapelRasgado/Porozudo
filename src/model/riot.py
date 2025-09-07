@@ -11,7 +11,7 @@ class AccountSchema(BaseModel):
 
 class SpectatorParticipantSchema(BaseModel):
     puuid: str
-    champion_id: str = Field(alias="championId")
+    champion_id: int = Field(alias="championId")
 
 
 class ActiveGameSchema(BaseModel):
