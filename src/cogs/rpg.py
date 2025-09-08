@@ -11,7 +11,6 @@ from langchain_ollama.llms import OllamaLLM
 
 from llm.embedding import E5Embeddings
 
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/rpg")
 
 INDEX_DIR = "/app/resources/vectorstore"

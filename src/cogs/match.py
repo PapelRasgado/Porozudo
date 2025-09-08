@@ -15,7 +15,6 @@ from src.team_generator.generator import generate_teams
 from src.ui.views import ResultButtons
 from src.utils.embed import create_champion_embed
 
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/match")
 
 
@@ -52,7 +51,13 @@ class MatchCog(Cog):
 
         with next(get_session()) as session:
             players = config_repo.get_pool_players(session)
-            teams = generate_teams(players, list(self.bot.champion_data.values()), choices_number)
+
+            try:
+                teams = generate_teams(players, list(self.bot.champion_data.values()), choices_number)
+            except ValueError as e:
+                await ctx.followup.send(str(e))
+                return
+
             season = season_repo.get_last_season(session)
             match = match_repo.create(session, Match(teams=teams, mode=len(teams[0].players), season=season))
 
@@ -81,7 +86,9 @@ class MatchCog(Cog):
             embed.add_field(name="Time vermelho (Lado direito)", value=red_team_players)
 
             await self.match_monitor.start_monitoring(players, match.id)
-            await ctx.followup.send(embed=embed, view=ResultButtons(match.id, ctx.author.id))
+            await ctx.followup.send(
+                embed=embed, view=ResultButtons(match.id, ctx.author.id, match_service=self.match_service)
+            )
 
     @commands.slash_command(name="finalizar", description="Finaliza uma partida")
     async def finalize(

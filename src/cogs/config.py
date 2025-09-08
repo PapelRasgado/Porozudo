@@ -11,7 +11,6 @@ from src.model.database import Match, Player, PlayerEloHistory, Season, Team, Te
 from src.repos import elo_repo, match_repo, player_repo, season_repo
 from src.repos.database import get_session
 
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/config")
 
 

@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlmodel import Session, select
+from sqlmodel import Session, and_, select
 
 from src.model.database import Match, Player, PlayerTeam, Team
 
@@ -9,13 +9,13 @@ def get_by_id(session: Session, match_id: int) -> Match:
     return session.exec(select(Match).where(Match.id == match_id)).first()
 
 
-def get_all_by_player(session: Session, player_id: int, limit: int) -> List[Match]:
+def get_all_finished_by_player(session: Session, player_id: int, limit: int) -> List[Match]:
     query = (
         select(Match)
         .join(Team)
         .join(PlayerTeam)
         .join(Player)
-        .where(Player.id == player_id)
+        .where(and_(Player.id == player_id, Match.result.is_not(None)))
         .order_by(Match.created_at.desc())
         .limit(limit)
     )

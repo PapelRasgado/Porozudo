@@ -5,10 +5,9 @@ import discord
 from src.model.database import TeamSide
 from src.repos import config_repo, match_repo, player_repo
 from src.repos.database import get_session
-from src.service import match_service
+from src.service.match_service import MatchService
 from src.utils.embed import create_active_players_embed
 
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/views")
 
 
@@ -83,10 +82,11 @@ class ResultButtons(discord.ui.View):
     A view to set the match result, with buttons for each team.
     """
 
-    def __init__(self, match_id, author_id):
+    def __init__(self, match_id, author_id, match_service: MatchService):
         super().__init__(timeout=None)
         self.match_id = match_id
         self.author_id = author_id
+        self.match_service = match_service
 
     @discord.ui.button(label="Vitória para o time azul", style=discord.ButtonStyle.blurple)
     async def blue_button_callback(self, button: discord.ui.Button, interaction: discord.Interaction):
@@ -114,7 +114,7 @@ class ResultButtons(discord.ui.View):
 
             match.result = result
 
-            match_service.finalize_match(session, match, result)
+            self.match_service.finalize_match(session, match, result)
 
             embeds = interaction.message.embeds
 

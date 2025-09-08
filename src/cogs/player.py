@@ -10,7 +10,6 @@ from src.model.database import Player
 from src.repos import player_repo
 from src.repos.database import get_session
 
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/player")
 
 

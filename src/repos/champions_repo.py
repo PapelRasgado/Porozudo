@@ -6,7 +6,6 @@ from threading import Thread
 
 import requests
 
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("champions")
 
 BASE_API_URL = "https://ddragon.leagueoflegends.com"

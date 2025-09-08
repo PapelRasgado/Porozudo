@@ -9,8 +9,6 @@ from src.model.riot import AccountSchema, ActiveGameSchema
 
 load_dotenv()
 
-
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/riot_client")
 
 

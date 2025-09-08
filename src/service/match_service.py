@@ -5,7 +5,6 @@ from src.model.riot import ActiveGameSchema
 from src.repos import elo_repo, match_repo, player_champion_repo, player_repo
 from src.repos.database import get_session
 
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/match_service")
 
 
@@ -55,7 +54,8 @@ class MatchService:
             )
             elo_repo.create_history(session, history)
 
-        match_repo.update(session, match)
+        match.result = result
+        self._match_repo.update(session, match)
         logger.info(f"Match {match.id} finished. Winner: {result.value}. Elo change: +/- {point_change} points.")
 
     def revert_match(self, session, match: Match):

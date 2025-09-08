@@ -12,7 +12,6 @@ PDF_DIR = "/app/resources"
 INDEX_DIR = "/app/resources/vectorstore"
 MODEL_NAME = os.getenv("EMBEDD_MODEL_NAME")
 
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("pdf_indexer")
 
 embeddings = E5Embeddings(OllamaEmbeddings(model=MODEL_NAME, base_url="http://ollama:11434"))

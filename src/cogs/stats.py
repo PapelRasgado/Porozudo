@@ -9,7 +9,6 @@ from src.repos import match_repo, player_repo, stat_repo
 from src.repos.database import get_session
 from src.utils.embed import create_match_history_embed
 
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/stats")
 
 
@@ -99,7 +98,7 @@ class StatsCog(Cog):
         with next(get_session()) as session:
             player = player_repo.get_player_by_discord(session, user.id if user else ctx.author.id)
 
-            matches = match_repo.get_all_by_player(session, player.id, limit)
+            matches = match_repo.get_all_finished_by_player(session, player.id, limit)
 
             embed = create_match_history_embed(matches, player)
 

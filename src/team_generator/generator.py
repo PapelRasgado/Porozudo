@@ -5,7 +5,6 @@ import random
 
 from src.model.database import Team, TeamSide
 
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("team_generator")
 
 
@@ -13,7 +12,7 @@ def generate_teams(players, champions, choices_number):
     team_size = len(players) // 2
 
     if len(players) % 2 != 0:
-        raise ValueError("The number of players must be even")
+        raise ValueError("O número de jogadores ativos deve ser par!")
 
     all_combinations = list(itertools.combinations(players, team_size))
 

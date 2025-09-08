@@ -12,7 +12,6 @@ from discord.commands import ApplicationContext
 
 from src.config import LAVALINK_PASSWORD, LAVALINK_PORT, LAVALINK_URL
 
-logging.basicConfig(format="%(levelname)s %(name)s %(asctime)s: %(message)s", level=logging.INFO)
 logger = logging.getLogger("c/music")
 
 url_rx = re.compile(r"https?://(?:www\.)?.+")
