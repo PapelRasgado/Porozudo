@@ -54,10 +54,10 @@ class ActiveMatchMonitor:
 
                 try:
                     active_game = await self._riot_client.get_active_game_by_puuid(player_to_check.puuid)
-                    participants_in_game = {p["puuid"] for p in active_game.get("participants", [])}
+                    participants_in_game = {p.puuid for p in active_game.participants}
 
                     if tracked_puuids.issubset(participants_in_game):
-                        logger.info(f"Monitor: Valid match found! Riot Match ID: {active_game['gameId']}")
+                        logger.info(f"Monitor: Valid match found! Riot Match ID: {active_game.game_id}")
                         self.match_service.register_match_champions(self._match_id, active_game)
                         break
 
