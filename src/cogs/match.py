@@ -85,7 +85,7 @@ class MatchCog(Cog):
             embed.add_field(name="Time azul (Lado esquerdo)", value=blue_team_players)
             embed.add_field(name="Time vermelho (Lado direito)", value=red_team_players)
 
-            await self.match_monitor.start_monitoring(players, match.id)
+            await self.match_monitor.start_monitoring(match.id)
             await ctx.followup.send(
                 embed=embed, view=ResultButtons(match.id, ctx.author.id, match_service=self.match_service)
             )

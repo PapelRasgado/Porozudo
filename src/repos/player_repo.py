@@ -1,8 +1,8 @@
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from sqlmodel import Session, select
 
-from src.model.database import Player, PlayerEloHistory
+from src.model.database import Player, PlayerEloHistory, PlayerTeam, Team
 
 
 def get_all_players(session) -> List[Player]:
@@ -27,6 +27,10 @@ def get_players_by_discord_ids(session: Session, discord_ids: List[int]) -> List
 
 def get_all_players_ranked(session: Session) -> List[Player]:
     return session.exec(select(Player).join(PlayerEloHistory).distinct().order_by(Player.points.desc())).all()
+
+
+def get_all_players_by_match(session: Session, match_id: int) -> Set[str]:
+    return session.exec(select(Player.uuid).join(PlayerTeam).join(Team).where(Team.match_id == match_id)).all()
 
 
 def create_player(session: Session, player: Player) -> Player:
