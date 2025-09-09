@@ -153,6 +153,32 @@ class MatchCog(Cog):
 
             await ctx.followup.send("Partida revertida!")
 
+    @commands.slash_command(name="monitorar", description="Inicia o monitoramento de uma partida")
+    async def monitor(
+        self,
+        ctx,
+        match_id: Option(int, "Identificador da partida", required=True),
+    ):
+        await ctx.response.defer()
+        if not ctx.guild_id:
+            await ctx.followup.send("Esse comando deve ser usado em um servidor")
+            return
+
+        if not ctx.user.guild_permissions.administrator:
+            await ctx.followup.send("Somente admins podem usar esse comando")
+            return
+
+        with next(get_session()) as session:
+            match = match_repo.get_by_id(session, match_id)
+
+            if not match:
+                await ctx.followup.send("Partida não encontrada!")
+                return
+
+            await self.match_monitor.start_monitoring(match_id)
+
+            await ctx.followup.send("Monitoramento iniciado!")
+
 
 def setup(bot):
     bot.add_cog(MatchCog(bot))

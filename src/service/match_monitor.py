@@ -40,20 +40,21 @@ class ActiveMatchMonitor:
         self._current_task = None
 
     async def _monitor_loop(self):
-        with next(get_session()) as session:
-            start_time = datetime.now()
-            timeout = timedelta(minutes=20)
+        start_time = datetime.now()
+        timeout = timedelta(minutes=20)
 
-            tracked_puuids = player_repo.get_all_players_by_match(session, self._match_id)
+        try:
+            while datetime.now() - start_time < timeout:
+                with next(get_session()) as session:
 
-            try:
-                while datetime.now() - start_time < timeout:
                     logger.info("Monitor: Checking active match...")
+
+                    tracked_puuids = player_repo.get_all_players_by_match(session, self._match_id)
 
                     player_to_check = random.choice(list(tracked_puuids))
 
                     try:
-                        active_game = await self._riot_client.get_active_game_by_puuid(player_to_check.puuid)
+                        active_game = await self._riot_client.get_active_game_by_puuid(player_to_check)
                         participants_in_game = {p.puuid for p in active_game.participants}
 
                         if tracked_puuids.issubset(participants_in_game):
@@ -65,10 +66,12 @@ class ActiveMatchMonitor:
                         if e.status != 404:
                             logger.error(f"Monitor: Unexpected API error: {e.status}")
 
-                    await asyncio.sleep(30)
+                await asyncio.sleep(30)
 
-            except asyncio.CancelledError:
-                logger.info("Monitor: Loop cancelled.")
-            finally:
-                logger.info("Monitor: Ending monitoring loop.")
-                self._current_task = None
+        except asyncio.CancelledError:
+            logger.info("Monitor: Loop cancelled.")
+        except Exception as e:
+            print(e)
+        finally:
+            logger.info("Monitor: Ending monitoring loop.")
+            self._current_task = None

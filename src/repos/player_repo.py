@@ -1,6 +1,6 @@
 from typing import List, Optional, Set
 
-from sqlmodel import Session, select
+from sqlmodel import Session, and_, select
 
 from src.model.database import Player, PlayerEloHistory, PlayerTeam, Team
 
@@ -30,7 +30,12 @@ def get_all_players_ranked(session: Session) -> List[Player]:
 
 
 def get_all_players_by_match(session: Session, match_id: int) -> Set[str]:
-    return session.exec(select(Player.uuid).join(PlayerTeam).join(Team).where(Team.match_id == match_id)).all()
+    return session.exec(
+        select(Player.puuid)
+        .join(PlayerTeam)
+        .join(Team)
+        .where(and_(Team.match_id == match_id, Player.puuid.is_not(None)))
+    ).all()
 
 
 def create_player(session: Session, player: Player) -> Player:
