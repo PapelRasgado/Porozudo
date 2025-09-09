@@ -55,10 +55,10 @@ class MusicCog(Cog):
                 )
             ]
 
-            # await wavelink.Pool.connect(
-            #     nodes=nodes,
-            #     client=self.bot,
-            # )
+            await wavelink.Pool.connect(
+                nodes=nodes,
+                client=self.bot,
+            )
         except Exception as e:
             logger.error(f"Falha ao conectar ao Lavalink: {e}")
 
