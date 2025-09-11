@@ -7,3 +7,6 @@ bot-env/
 resources/
 
 .idea/
+
+.vscode/
+.python-version
