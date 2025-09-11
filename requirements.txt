@@ -19,3 +19,7 @@ SQLAlchemy~=2.0.40
 alembic
 pydantic
 aiohttp
+langchain=0.3.27
+langchain-openai=0.3.32
+langchain-anthropic=0.3.19
+langchain-google-genai=2.1.10
