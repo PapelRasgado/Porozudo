@@ -33,7 +33,7 @@ def create_image_from_champions(champions_list: list[str], data: ImageDict) -> i
     return image_buffer
 
 
-def create_champion_embed(champions_list: list[str], data: ImageDict, colour: discord.Colour, team: int) -> dict:
+def create_champion_embed(champions_list: list[str], data: ImageDict, colour: discord.Colour, team: int, suggested_champions_list: list[str] | None) -> dict:
     if team == 1:
         embed_description = (
             "Você está no time Azul :blue_circle:, localizado no lado esquerdo :arrow_left: da "
