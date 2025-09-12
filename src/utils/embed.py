@@ -5,6 +5,32 @@ from PIL import Image, ImageDraw
 
 from src.repos.champions_repo import ImageDict
 
+def create_image_from_champions_with_idx(champions_dict: dict, data: ImageDict) -> io.BytesIO:
+    max_width, max_height = 680, 140
+    new_im = Image.new("RGBA", (max_width, max_height), (255, 0, 0, 0))
+    new_im_draw = ImageDraw.Draw(new_im)
+
+    x_offset = 10
+    y_offset = 10
+
+    for idx, _id in champions_dict.items():
+        champion_data = data[_id]
+        img = Image.open(io.BytesIO(champion_data["image"]))
+        new_im.paste(img, (x_offset, y_offset))
+
+        new_im_draw.text(
+            (x_offset + 5, y_offset), str(idx + 1), font_size=30, fill="white", stroke_width=2, stroke_fill="black"
+        )
+
+        x_offset += 133
+        if x_offset >= max_width - 10:
+            x_offset = 10
+            y_offset += 133
+
+    image_buffer = io.BytesIO()
+    new_im.save(image_buffer, format="PNG")
+    image_buffer.seek(0)
+    return image_buffer
 
 def create_image_from_champions(champions_list: list[str], data: ImageDict) -> io.BytesIO:
     max_width, max_height = 680, 281
@@ -31,6 +57,30 @@ def create_image_from_champions(champions_list: list[str], data: ImageDict) -> i
     new_im.save(image_buffer, format="PNG")
     image_buffer.seek(0)
     return image_buffer
+
+
+def create_champion_suggestion_embed(champions_list: list[str], data: ImageDict, colour: discord.Colour, suggested_champions_list: list[str]) -> dict:
+    suggested_champions_by_idx = {}
+
+    for cur_sugg_champ in suggested_champions_list:
+        for champ_idx in range(len(champions_list)):
+            if champions_list[champ_idx] == cur_sugg_champ:
+                suggested_champions_by_idx[champ_idx] = cur_sugg_champ
+                break
+
+    embed_description = "Aqui está uma sugestão de time para vocês para que Thiago não chore por conta da comp :pinching_hand::skin-tone-2:"
+
+    image_buffer = create_image_from_champions_with_idx(suggested_champions_by_idx, data)
+
+    embed = discord.Embed(
+        title="Sugestão de comp",
+        description=embed_description,
+        color=colour
+    )
+
+    embed.set_image(url="attachment://image.png")
+
+    return {"embed": embed, "file": image_buffer}
 
 
 def create_champion_embed(champions_list: list[str], data: ImageDict, colour: discord.Colour, team: int) -> dict:

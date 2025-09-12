@@ -13,7 +13,11 @@ from src.service.match_monitor import ActiveMatchMonitor
 from src.service.match_service import MatchService
 from src.team_generator.generator import generate_teams
 from src.ui.views import ResultButtons
-from src.utils.embed import create_champion_embed
+from src.utils.embed import create_champion_embed, create_champion_suggestion_embed
+
+from src.service.team_suggestion_use_case import TeamSuggestionUseCase
+from src.client.llm_client import LLMClient
+
 
 logger = logging.getLogger("c/match")
 
@@ -37,6 +41,33 @@ class MatchCog(Cog):
 
         self.match_service = MatchService()
         self.match_monitor = ActiveMatchMonitor(riot_client=self.riot_client, match_service=self.match_service)
+
+        llm_client = LLMClient()
+        self.team_suggestion_use_case = TeamSuggestionUseCase(llm_client=llm_client, champion_data=bot.champion_data)
+
+
+    def _generate_team_suggestion(self, team_size: int, champions: list[str]) -> list[str] | None:    
+        try:
+            champions_names = self.team_suggestion_use_case.suggest_team(team_size, champions)
+            champions_ids = []
+
+            for champion_name in champions_names:
+                current_champion_id = None
+                for key, value in self.bot.champion_data.items():
+                    if value.get("name") == champion_name:
+                        current_champion_id = key
+                        break
+
+                if current_champion_id is None:
+                    logger.warning(f"champion ID not found for champion ${champion_name}")
+                    return None
+                champions_ids.append(current_champion_id)
+
+            return champions_ids
+
+        except Exception as e:
+            logger.warning(f"failed to suggest a team using llm: {e}")
+            return None
 
     @commands.slash_command(name="sortear", description="Sortea os times e campeões")
     async def create_match(
@@ -64,18 +95,36 @@ class MatchCog(Cog):
             blue_team_db = teams[0] if teams[0].side == "blue" else teams[1]
             red_team_db = teams[1] if teams[1].side == "red" else teams[0]
 
+            blue_team_champions_suggestion = self._generate_team_suggestion(len(teams[0].players), blue_team_db.champions)
+            red_team_champions_suggestion = self._generate_team_suggestion(len(teams[1].players), red_team_db.champions)
+
+            logger.debug(f"suggested champions for blue team: ${blue_team_champions_suggestion}")
+            logger.debug(f"suggested champions for red team: ${red_team_champions_suggestion}")
+
             blue_embed = create_champion_embed(blue_team_db.champions, self.bot.champion_data, discord.Colour.blue(), 1)
             red_embed = create_champion_embed(red_team_db.champions, self.bot.champion_data, discord.Colour.red(), 2)
+
+            blue_suggestions_embed = create_champion_suggestion_embed(blue_team_db.champions, self.bot.champion_data, discord.Colour.blue(), 
+                                                                        blue_team_champions_suggestion) if blue_team_champions_suggestion is not None else None
+
+            red_suggestions_embed = create_champion_suggestion_embed(red_team_db.champions, self.bot.champion_data, discord.Colour.red(), 
+                                                                        red_team_champions_suggestion) if red_team_champions_suggestion is not None else None
 
             blue_team_players = ""
             for idx, player in enumerate(blue_team_db.players):
                 blue_team_players += f"{idx + 1} - <@{player.discord_id}>\n"
                 await send_embed(player, blue_embed, self.bot)
 
+                if blue_suggestions_embed is not None:
+                    await send_embed(player, blue_suggestions_embed, self.bot)
+
             red_team_players = ""
             for idx, player in enumerate(red_team_db.players):
                 red_team_players += f"{idx + 1} - <@{player.discord_id}>\n"
                 await send_embed(player, red_embed, self.bot)
+
+                if red_suggestions_embed is not None:
+                    await send_embed(player, red_suggestions_embed, self.bot)
 
             embed = discord.Embed(
                 title=f"Partidazuda ({match.id})",
