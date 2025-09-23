@@ -1,12 +1,13 @@
 import os
 import sys
+
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlmodel import Session, select
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.model.database import Player, Season, Match, Team, PlayerTeam, PlayerEloHistory, PlayerMatchChampion
+from src.model.database import Match, Player, PlayerEloHistory, PlayerMatchChampion, PlayerTeam, Season, Team
 
 load_dotenv()
 

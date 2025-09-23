@@ -1,5 +1,7 @@
+import os
 from logging.config import fileConfig
 
+from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
@@ -57,6 +59,14 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    load_dotenv()
+
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise ValueError("DATABASE_URL not set.")
+
+    config.set_main_option("sqlalchemy.url", db_url)
+
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

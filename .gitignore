@@ -2,6 +2,8 @@
 .env
 credenciais_firebase.json
 
+docker-compose.yaml
+
 lavalink/
 bot-env/
 resources/
