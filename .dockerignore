@@ -4,6 +4,7 @@
 
 Dockerfile
 .dockerignore
+docker-compose.yaml
 
 .venv
 __pycache__/

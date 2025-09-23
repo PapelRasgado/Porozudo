@@ -19,3 +19,4 @@ SQLAlchemy~=2.0.40
 alembic
 pydantic
 aiohttp
+psycopg2-binary

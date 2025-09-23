@@ -1,14 +1,13 @@
 import logging
-from datetime import datetime, time
+from datetime import time
 
 from discord import Activity, ActivityType, Cog
 from discord.commands import ApplicationContext
 from discord.ext import commands, tasks
 
-import src.repos.firebase_repo as repo
 from src.main import PorozudoBot
-from src.model.database import Match, Player, PlayerEloHistory, Season, Team, TeamSide
-from src.repos import elo_repo, match_repo, player_repo, season_repo
+from src.model.database import PlayerEloHistory, Season
+from src.repos import elo_repo, player_repo, season_repo
 from src.repos.database import get_session
 
 logger = logging.getLogger("c/config")
@@ -37,57 +36,6 @@ class ConfigCog(Cog):
             logger.info("Dados dos campeões atualizados.")
         except Exception as e:
             logger.error(f"Falha ao atualizar dados dos campeões: {e}")
-
-    @commands.slash_command(name="migrar", description="Migra os dados para sqlite")
-    async def migrate(self, ctx: ApplicationContext):
-        await ctx.response.defer()
-        with next(get_session()) as session:
-            if not ctx.guild_id:
-                await ctx.followup.send("Esse comando deve ser usado em um servidor")
-                return
-
-            if not ctx.user.guild_permissions.administrator:
-                await ctx.followup.send("Somente admins podem usar esse comando")
-                return
-
-            players = await repo.get_players()
-
-            players_dict = {}
-
-            for player in players:
-                db_player = player_repo.create_player(
-                    session, Player(username=player.get("nome"), discord_id=str(player.get("discord_id")))
-                )
-                players_dict[player.id] = db_player
-
-            matches = await repo.get_all_finished_matches()
-            for match in matches:
-                blue_team = match.get("blue_team")
-
-                blue_players = [players_dict[p] for p in blue_team["players"]]
-
-                blue_team_db = Team(
-                    side=TeamSide.blue, players=blue_players, champions=blue_team["champions"], team_rating=1500
-                )
-
-                red_team = match.get("red_team")
-
-                red_players = [players_dict[p] for p in red_team["players"]]
-
-                red_team_db = Team(
-                    side=TeamSide.red, players=red_players, champions=red_team["champions"], team_rating=1500
-                )
-
-                new_match = Match(
-                    mode=match.get("mode"),
-                    result=match.get("result").lower(),
-                    teams=[blue_team_db, red_team_db],
-                    created_at=datetime.fromisoformat(match.get("timestamp").isoformat()),
-                )
-
-                match_repo.create(session, new_match)
-
-            await ctx.followup.send("Dados migrados!")
 
     @commands.slash_command(name="reset", description="Cria uma nova season e reinicia os elos")
     async def reset(self, ctx: ApplicationContext):
