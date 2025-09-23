@@ -34,7 +34,7 @@ class StatsCog(Cog):
     ):
         await ctx.response.defer(ephemeral=True)
         with next(get_session()) as session:
-            stats = stat_repo.get_players_stat(session)
+            stats = stat_repo.get_players_stat(session, mode)
 
             result_list = sorted(stats.values(), key=lambda x: x["wins"], reverse=True)
 
@@ -69,7 +69,7 @@ class StatsCog(Cog):
     ):
         await ctx.response.defer(ephemeral=True)
         with next(get_session()) as session:
-            stats = stat_repo.get_players_stat(session)
+            stats = stat_repo.get_players_stat(session, mode)
 
             filtered_stats = {player_id: data for player_id, data in stats.items() if data["games"] >= minimal}
 
@@ -80,9 +80,15 @@ class StatsCog(Cog):
                 for rank, player in enumerate(result_list)
             ]
 
+            description = (
+                "\n".join(result_strings)
+                if len(result_strings) > 1
+                else "Não foi encontrado nenhum dado compatível com os parâmetros selecionados."
+            )
+
             embed = Embed(
                 title=f"Rankzudo {'Geral' if not mode else f'{mode}X{mode}'} - Mínimo de {minimal} jogos",
-                description="\n".join(result_strings),
+                description=description,
             )
 
             await ctx.followup.send(embed=embed)

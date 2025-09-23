@@ -43,7 +43,6 @@ class MusicCog(Cog):
 
     @Cog.listener()
     async def on_ready(self):
-        logger.info("MusicCog está pronta, conectando ao Lavalink...")
         try:
             nodes = [
                 wavelink.Node(
@@ -60,7 +59,7 @@ class MusicCog(Cog):
                 client=self.bot,
             )
         except Exception as e:
-            logger.error(f"Falha ao conectar ao Lavalink: {e}")
+            logger.error(f"Failed to connect lavalink: {e}")
 
     @Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload):
