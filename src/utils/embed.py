@@ -1,8 +1,10 @@
 import io
+from typing import List
 
 import discord
 from PIL import Image, ImageDraw
 
+from src.model.database import Player
 from src.repos.champions_repo import ImageDict
 
 
@@ -33,19 +35,23 @@ def create_image_from_champions(champions_list: list[str], data: ImageDict) -> i
     return image_buffer
 
 
-def create_champion_embed(champions_list: list[str], data: ImageDict, colour: discord.Colour, team: int) -> dict:
+def create_champion_embed(
+    champions_list: list[str], data: ImageDict, colour: discord.Colour, team: int, players: List[Player]
+) -> dict:
     if team == 1:
         embed_description = (
             "Você está no time Azul :blue_circle:, localizado no lado esquerdo :arrow_left: da "
-            "personalizada. <a:calabreso:1320528277873365012>\n\n```yaml\n"
+            "personalizada. <a:calabreso:1320528277873365012>\n\n**Campeões:**\n```yaml\n"
         )
     else:
         embed_description = (
             "Você está no time Vermelho :red_circle:, localizado no lado direito :arrow_right: da "
-            "personalizada. <a:calabreso:1320528277873365012>\n\n```haskell\n"
+            "personalizada. <a:calabreso:1320528277873365012>\n\n**Campeões:**\n```haskell\n"
         )
 
     embed_description += "\n".join([data[_id]["name"] for _id in champions_list]) + "\n```"
+
+    embed_description += "\n**Time:**\n```\n" + "\n".join([player.username for player in players]) + "\n```"
 
     image_buffer = create_image_from_champions(champions_list, data)
     embed = discord.Embed(

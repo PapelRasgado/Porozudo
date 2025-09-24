@@ -64,8 +64,12 @@ class MatchCog(Cog):
             blue_team_db = teams[0] if teams[0].side == "blue" else teams[1]
             red_team_db = teams[1] if teams[1].side == "red" else teams[0]
 
-            blue_embed = create_champion_embed(blue_team_db.champions, self.bot.champion_data, discord.Colour.blue(), 1)
-            red_embed = create_champion_embed(red_team_db.champions, self.bot.champion_data, discord.Colour.red(), 2)
+            blue_embed = create_champion_embed(
+                blue_team_db.champions, self.bot.champion_data, discord.Colour.blue(), 1, blue_team_db.players
+            )
+            red_embed = create_champion_embed(
+                red_team_db.champions, self.bot.champion_data, discord.Colour.red(), 2, red_team_db.players
+            )
 
             blue_team_players = ""
             for idx, player in enumerate(blue_team_db.players):
