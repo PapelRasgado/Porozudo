@@ -49,7 +49,7 @@ class Team(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     side: TeamSide
     champions: List[str] = Field(sa_column=Column(JSON))
-    team_rating: int
+    team_rating: float
     match_id: Optional[int] = Field(default=None, foreign_key="match.id")
 
     players: List["Player"] = Relationship(link_model=PlayerTeam)
