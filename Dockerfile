@@ -1,14 +1,11 @@
-FROM python:3.11.11
-RUN apt-get update && apt-get install -y \
+FROM python:3.11.11-slim
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
-    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY . .
-RUN pip install -r requirements.txt
-RUN pip uninstall discord.py py-cord -y
-RUN pip install py-cord
+RUN pip install --no-cache-dir -r requirements.txt
 
 RUN chmod +x ./docker-entrypoint.sh
 
