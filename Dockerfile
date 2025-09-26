@@ -6,6 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip uninstall discord.py py-cord -y
+RUN pip install --no-cache-dir py-cord
 
 RUN chmod +x ./docker-entrypoint.sh
 

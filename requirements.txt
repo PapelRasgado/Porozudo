@@ -5,13 +5,13 @@ pynacl
 python-dotenv~=1.0.1
 requests~=2.32.0
 pillow~=11.0.0
-pymupdf>=1.23.0
 wavelink
 #langchain
 #langchain-community
 #langchain-ollama
 #langchain-chroma
 #pypdf
+#pymupdf>=1.23.0
 #chromadb
 #langdetect
 sqlmodel==0.0.24
