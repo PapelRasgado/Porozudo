@@ -31,7 +31,7 @@ class QueueCog(Cog):
                 await ctx.followup.send("É necessário estar conectado a um canal de voz para executar esse comando!")
                 return
 
-            players = player_repo.get_players_by_discord_ids(session, list(voice.channel.voice_states))
+            players = player_repo.get_players_by_discord_ids(session, [str(uid) for uid in voice.channel.voice_states])
             config_repo.clear_player_pool(session)
             config_repo.add_to_pool(session, players)
 

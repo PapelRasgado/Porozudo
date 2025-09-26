@@ -18,7 +18,7 @@ class TeamSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         with next(get_session()) as session:
-            players = player_repo.get_players_by_discord_ids(session, [user.id for user in self.values])
+            players = player_repo.get_players_by_discord_ids(session, [str(user.id) for user in self.values])
             config_repo.add_to_pool(session, players)
 
             await interaction.response.send_message(

@@ -102,7 +102,7 @@ class StatsCog(Cog):
     ):
         await ctx.response.defer(ephemeral=True)
         with next(get_session()) as session:
-            player = player_repo.get_player_by_discord(session, user.id if user else ctx.author.id)
+            player = player_repo.get_player_by_discord(session, str(user.id if user else ctx.author.id))
 
             matches = match_repo.get_all_finished_by_player(session, player.id, limit)
 

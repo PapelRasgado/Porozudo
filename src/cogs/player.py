@@ -31,7 +31,7 @@ class PlayerCog(Cog):
         with next(get_session()) as session:
             try:
                 player_data = await self.riot_client.get_puuid_by_riot_name(game_name, tag_line)
-                player = player_repo.get_player_by_discord(session, ctx.author.id)
+                player = player_repo.get_player_by_discord(session, str(ctx.author.id))
 
                 player.puuid = player_data.puuid
 

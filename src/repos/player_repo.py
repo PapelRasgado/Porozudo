@@ -21,7 +21,7 @@ def get_players_by_ids(session: Session, ids: List[int]) -> Player:
     return session.exec(select(Player).where(Player.id.in_(ids))).all()
 
 
-def get_players_by_discord_ids(session: Session, discord_ids: List[int]) -> List[Player]:
+def get_players_by_discord_ids(session: Session, discord_ids: List[str]) -> List[Player]:
     return session.exec(select(Player).where(Player.discord_id.in_(discord_ids))).all()
 
 
