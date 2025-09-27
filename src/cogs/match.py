@@ -49,6 +49,10 @@ class MatchCog(Cog):
             await ctx.followup.send("Esse comando deve ser usado em um servidor")
             return
 
+        if not ctx.user.guild_permissions.administrator:
+            await ctx.followup.send("Somente admins podem usar esse comando")
+            return
+
         with next(get_session()) as session:
             players = config_repo.get_pool_players(session)
 

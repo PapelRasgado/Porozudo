@@ -16,6 +16,11 @@ class QueueCog(Cog):
     @commands.slash_command(name="adicionar", description="Adiciona jogadores a lista de ativos")
     async def add_active_players(self, ctx: discord.ApplicationContext):
         await ctx.response.defer(ephemeral=True)
+
+        if not ctx.user.guild_permissions.administrator:
+            await ctx.followup.send("Somente admins podem usar esse comando")
+            return
+
         await ctx.followup.send("Monta o time!", view=TeamSelectView())
 
     @commands.slash_command(
@@ -24,6 +29,10 @@ class QueueCog(Cog):
     async def add_channel_active_players(self, ctx: discord.ApplicationContext):
         await ctx.response.defer(ephemeral=True)
         with next(get_session()) as session:
+            if not ctx.user.guild_permissions.administrator:
+                await ctx.followup.send("Somente admins podem usar esse comando")
+                return
+
             member = ctx.guild.get_member(ctx.user.id)
             voice = member.voice
 
@@ -41,6 +50,10 @@ class QueueCog(Cog):
     async def clear_active_players(self, ctx):
         await ctx.response.defer(ephemeral=True)
         with next(get_session()) as session:
+            if not ctx.user.guild_permissions.administrator:
+                await ctx.followup.send("Somente admins podem usar esse comando")
+                return
+
             config_repo.clear_player_pool(session)
             await ctx.followup.send("A lista de jogadores ativos foi esvaziada!")
 
@@ -48,6 +61,10 @@ class QueueCog(Cog):
     async def list_active_players(self, ctx):
         await ctx.response.defer()
         with next(get_session()) as session:
+            if not ctx.user.guild_permissions.administrator:
+                await ctx.followup.send("Somente admins podem usar esse comando")
+                return
+
             players = config_repo.get_pool_players(session)
             embed = create_active_players_embed(players)
             await ctx.followup.send(embed=embed, view=DeleteButtons(players))
