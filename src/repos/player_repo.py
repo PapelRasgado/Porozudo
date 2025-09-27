@@ -1,4 +1,4 @@
-from typing import List, Optional, Set
+from typing import List, Optional, Sequence
 
 from sqlmodel import Session, and_, select
 
@@ -29,7 +29,7 @@ def get_all_players_ranked(session: Session) -> List[Player]:
     return session.exec(select(Player).join(PlayerEloHistory).distinct().order_by(Player.points.desc())).all()
 
 
-def get_all_players_by_match(session: Session, match_id: int) -> Set[str]:
+def get_all_players_by_match(session: Session, match_id: int) -> Sequence[str]:
     return session.exec(
         select(Player.puuid)
         .join(PlayerTeam)

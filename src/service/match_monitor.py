@@ -49,7 +49,7 @@ class ActiveMatchMonitor:
 
                     logger.info("Monitor: Checking active match...")
 
-                    tracked_puuids = player_repo.get_all_players_by_match(session, self._match_id)
+                    tracked_puuids = set(player_repo.get_all_players_by_match(session, self._match_id))
 
                     player_to_check = random.choice(list(tracked_puuids))
 
@@ -71,7 +71,7 @@ class ActiveMatchMonitor:
         except asyncio.CancelledError:
             logger.info("Monitor: Loop cancelled.")
         except Exception as e:
-            print(e)
+            logger.exception("Monitor: Failed to monitor active match.", exc_info=e)
         finally:
             logger.info("Monitor: Ending monitoring loop.")
             self._current_task = None
