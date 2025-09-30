@@ -7,6 +7,8 @@ WORKDIR /app
 
 COPY bot/ ./bot/
 COPY shared/ ./shared/
+COPY alembic/ ./alembic/
+COPY alembic.ini ./alembic.ini
 
 RUN pip install --no-cache-dir -r bot/requirements.txt
 
