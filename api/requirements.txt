@@ -1,0 +1,6 @@
+fastapi==0.115.12
+passlib==1.7.4
+pydantic==2.11.3
+sqlmodel==0.0.24
+SQLAlchemy~=2.0.40
+python-dotenv~=1.1.0

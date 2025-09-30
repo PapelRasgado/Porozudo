@@ -2,7 +2,7 @@
 .github
 .gitignore
 
-Dockerfile
+bot/Dockerfile
 .dockerignore
 docker-compose.yaml
 
