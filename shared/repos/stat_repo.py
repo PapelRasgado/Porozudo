@@ -6,7 +6,7 @@ from sqlmodel import Session
 from shared.model.database import Match, Player, PlayerTeam, Team
 
 
-def get_players_stat(session: Session, mode: int = 0) -> Dict[str, Any]:
+def get_players_stat(session: Session, mode: int = 0, season: int = 0) -> Dict[str, Any]:
     win_condition = Team.side == Match.result
 
     query = (
@@ -24,6 +24,9 @@ def get_players_stat(session: Session, mode: int = 0) -> Dict[str, Any]:
 
     if mode != 0:
         query = query.where(Match.mode == mode)
+
+    if season != 0:
+        query = query.where(Match.season_id == season)
 
     query = query.group_by(Player.id, Player.discord_id)
 

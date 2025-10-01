@@ -6,7 +6,7 @@ from discord.ext import commands
 
 from bot.main import PorozudoBot
 from bot.utils.embed import create_match_history_embed
-from shared.repos import match_repo, player_repo, stat_repo
+from shared.repos import match_repo, player_repo, stat_repo, season_repo
 from shared.repos.database import get_session
 
 logger = logging.getLogger("c/stats")
@@ -31,10 +31,24 @@ class StatsCog(Cog):
                 OptionChoice("3X3", value=3),
             ],
         ),
+            season : Option(
+            int,
+            "Escolha a season",
+            default=0,
+        ),
     ):
         await ctx.response.defer(ephemeral=True)
         with next(get_session()) as session:
-            stats = stat_repo.get_players_stat(session, mode)
+            if not season or season < 1:
+                season_db = season_repo.get_last_season(session)
+            else:
+                season_db = season_repo.get_by_id(session, season)
+
+            if not season_db:
+                await ctx.followup.send("Nenhum dado encontrado para a season especificada.")
+                return
+
+            stats = stat_repo.get_players_stat(session, mode, season_db.id)
 
             result_list = sorted(stats.values(), key=lambda x: x["wins"], reverse=True)
 
@@ -44,7 +58,7 @@ class StatsCog(Cog):
             ]
 
             embed = Embed(
-                title=f"Rankzudo {'Geral' if not mode else f'{mode}X{mode}'}", description="\n".join(result_strings)
+                title=f"Rankzudo {'Geral' if not mode else f'{mode}X{mode}'} - Season {season_db.id}", description="\n".join(result_strings)
             )
 
             await ctx.followup.send(embed=embed)
@@ -66,10 +80,24 @@ class StatsCog(Cog):
             ],
         ),
         minimal: Option(int, "Quantidade minima de jogos", name="corte", default=10, min_value=1, max_value=30),
+            season: Option(
+                int,
+                "Escolha a season",
+                default=0,
+            ),
     ):
         await ctx.response.defer(ephemeral=True)
         with next(get_session()) as session:
-            stats = stat_repo.get_players_stat(session, mode)
+            if not season or season < 1:
+                season_db = season_repo.get_last_season(session)
+            else:
+                season_db = season_repo.get_by_id(session, season)
+
+            if not season_db:
+                await ctx.followup.send("Season invalida, consultar seasons atravez do comando '''/seasons'''.")
+                return
+
+            stats = stat_repo.get_players_stat(session, mode, season_db.id)
 
             filtered_stats = {player_id: data for player_id, data in stats.items() if data["games"] >= minimal}
 
@@ -87,7 +115,7 @@ class StatsCog(Cog):
             )
 
             embed = Embed(
-                title=f"Rankzudo {'Geral' if not mode else f'{mode}X{mode}'} - Mínimo de {minimal} jogos",
+                title=f"Rankzudo {'Geral' if not mode else f'{mode}X{mode}'} - Season {season_db.id} - Mínimo de {minimal} jogos",
                 description=description,
             )
 
@@ -150,6 +178,39 @@ class StatsCog(Cog):
             )
 
         await ctx.followup.send(embed=embed)
+
+    @commands.slash_command(name="seasons", description="Exibe uma lista com as seasons")
+    async def seasons(self, ctx: ApplicationContext):
+        await ctx.response.defer(ephemeral=True)
+        with next(get_session()) as session:
+            all_seasons = season_repo.get_all_seasons(session)
+
+            if not all_seasons:
+                await ctx.followup.send("Nenhuma temporada foi encontrada no histórico.")
+                return
+
+            embed = Embed(
+                title="📜 Histórico de Temporadas",
+                description="Aqui estão todas as temporadas, da mais recente para a mais antiga.",
+                color=Color.blue()
+            )
+
+            for season in all_seasons:
+                start_date_str = season.start_date.strftime("%d/%m/%Y")
+
+                if season.end_date:
+                    end_date_str = season.end_date.strftime("%d/%m/%Y")
+                    status = f"Finalizada em: {end_date_str}"
+                else:
+                    status = "**(Temporada Atual)**"
+
+                embed.add_field(
+                    name=f"🏆 Temporada #{season.id}",
+                    value=f"**Início:** {start_date_str}\n{status}",
+                    inline=False
+                )
+
+            await ctx.followup.send(embed=embed)
 
 
 def setup(bot):

@@ -22,3 +22,11 @@ def create_season(session: Session, season: Season) -> Season:
     session.commit()
     session.refresh(season_db)
     return season_db
+
+
+def get_by_id(session, season) -> Season:
+    return session.exec(select(Season).where(Season.id == season)).first()
+
+
+def get_all_seasons(session):
+    return session.exec(select(Season).order_by(Season.start_date.desc())).all()
