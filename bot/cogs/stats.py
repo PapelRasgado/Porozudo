@@ -6,7 +6,7 @@ from discord.ext import commands
 
 from bot.main import PorozudoBot
 from bot.utils.embed import create_match_history_embed
-from shared.repos import match_repo, player_repo, stat_repo, season_repo
+from shared.repos import match_repo, player_repo, season_repo, stat_repo
 from shared.repos.database import get_session
 
 logger = logging.getLogger("c/stats")
@@ -31,7 +31,7 @@ class StatsCog(Cog):
                 OptionChoice("3X3", value=3),
             ],
         ),
-            season : Option(
+        season: Option(
             int,
             "Escolha a season",
             default=0,
@@ -58,7 +58,8 @@ class StatsCog(Cog):
             ]
 
             embed = Embed(
-                title=f"Rankzudo {'Geral' if not mode else f'{mode}X{mode}'} - Season {season_db.id}", description="\n".join(result_strings)
+                title=f"Rankzudo {'Geral' if not mode else f'{mode}X{mode}'} - Season {season_db.id}",
+                description="\n".join(result_strings),
             )
 
             await ctx.followup.send(embed=embed)
@@ -80,11 +81,11 @@ class StatsCog(Cog):
             ],
         ),
         minimal: Option(int, "Quantidade minima de jogos", name="corte", default=10, min_value=1, max_value=30),
-            season: Option(
-                int,
-                "Escolha a season",
-                default=0,
-            ),
+        season: Option(
+            int,
+            "Escolha a season",
+            default=0,
+        ),
     ):
         await ctx.response.defer(ephemeral=True)
         with next(get_session()) as session:
@@ -192,7 +193,7 @@ class StatsCog(Cog):
             embed = Embed(
                 title="📜 Histórico de Temporadas",
                 description="Aqui estão todas as temporadas, da mais recente para a mais antiga.",
-                color=Color.blue()
+                color=Color.blue(),
             )
 
             for season in all_seasons:
@@ -205,9 +206,7 @@ class StatsCog(Cog):
                     status = "**(Temporada Atual)**"
 
                 embed.add_field(
-                    name=f"🏆 Temporada #{season.id}",
-                    value=f"**Início:** {start_date_str}\n{status}",
-                    inline=False
+                    name=f"🏆 Temporada #{season.id}", value=f"**Início:** {start_date_str}\n{status}", inline=False
                 )
 
             await ctx.followup.send(embed=embed)
