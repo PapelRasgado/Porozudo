@@ -13,7 +13,7 @@ COPY alembic.ini ./alembic.ini
 RUN pip install --no-cache-dir -r bot/requirements.txt
 
 RUN pip uninstall discord.py py-cord -y
-RUN pip install --no-cache-dir py-cord
+RUN pip install --no-cache-dir py-cord py-cord[voice]
 
 RUN chmod +x ./bot/docker-entrypoint.sh
 
