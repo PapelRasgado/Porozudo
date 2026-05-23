@@ -8,6 +8,27 @@ from shared.repos.database import get_session
 logger = logging.getLogger("c/match_service")
 
 
+def _calculate_elo_change(
+        player_rating: int,
+        opponent_team_rating: float,
+        k_factor: int,
+        won: bool,
+) -> int:
+    expected_score = 1 / (
+            1 + 10 ** ((opponent_team_rating - player_rating) / 400)
+    )
+
+    raw_change = round(
+        k_factor * (1 - expected_score)
+    )
+
+    raw_change = max(1, raw_change)
+
+    direction = 1 if won else -1
+
+    return raw_change * direction
+
+
 class MatchService:
     def __init__(self):
         self._elo_repo = elo_repo
@@ -26,11 +47,8 @@ class MatchService:
 
         k_factor = {1: 1, 2: 1, 3: 5, 4: 10, 5: 20}.get(match.mode, 10)
 
-        expected_win_prob = 1 / (1 + 10 ** ((losing_team_obj.team_rating - winning_team_obj.team_rating) / 400))
-        point_change = round(k_factor * (1 - expected_win_prob))
-        point_change = max(1, point_change)
-
         for player in winning_team_obj.players:
+            point_change = _calculate_elo_change(player.points, losing_team_obj.team_rating, k_factor, True)
             points_before = player.points
             player.points += point_change
             history = PlayerEloHistory(
@@ -43,6 +61,7 @@ class MatchService:
             self._elo_repo.create_history(session, history)
 
         for player in losing_team_obj.players:
+            point_change = _calculate_elo_change(player.points, winning_team_obj.team_rating, k_factor, False)
             points_before = player.points
             player.points -= point_change
             history = PlayerEloHistory(
@@ -56,7 +75,7 @@ class MatchService:
 
         match.result = result
         self._match_repo.update(session, match)
-        logger.info(f"Match {match.id} finished. Winner: {result.value}. Elo change: +/- {point_change} points.")
+        logger.info(f"Match {match.id} finished. Winner: {result.value}.")
 
     def revert_match(self, session, match: Match):
         for entry in match.elo_history:

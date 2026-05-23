@@ -5,7 +5,7 @@ pynacl
 python-dotenv~=1.0.1
 requests~=2.32.0
 pillow~=11.0.0
-wavelink
+wavelink==3.5.2
 #langchain
 #langchain-community
 #langchain-ollama
