@@ -9,18 +9,14 @@ logger = logging.getLogger("c/match_service")
 
 
 def _calculate_elo_change(
-        player_rating: int,
-        opponent_team_rating: float,
-        k_factor: int,
-        won: bool,
+    player_rating: int,
+    opponent_team_rating: float,
+    k_factor: int,
+    won: bool,
 ) -> int:
-    expected_score = 1 / (
-            1 + 10 ** ((opponent_team_rating - player_rating) / 400)
-    )
+    expected_score = 1 / (1 + 10 ** ((opponent_team_rating - player_rating) / 400))
 
-    raw_change = round(
-        k_factor * (1 - expected_score)
-    )
+    raw_change = round(k_factor * (1 - expected_score))
 
     raw_change = max(1, raw_change)
 
