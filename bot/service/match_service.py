@@ -59,7 +59,7 @@ class MatchService:
         for player in losing_team_obj.players:
             point_change = _calculate_elo_change(player.points, winning_team_obj.team_rating, k_factor, False)
             points_before = player.points
-            player.points -= point_change
+            player.points += point_change
             history = PlayerEloHistory(
                 player_id=player.id,
                 match_id=match.id,
