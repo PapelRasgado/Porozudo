@@ -16,13 +16,9 @@ def _calculate_elo_change(
 ) -> int:
     expected_score = 1 / (1 + 10 ** ((opponent_team_rating - player_rating) / 400))
 
-    raw_change = round(k_factor * (1 - expected_score))
+    change = max(1, round(k_factor * (1 - expected_score)))
 
-    raw_change = max(1, raw_change)
-
-    direction = 1 if won else -1
-
-    return raw_change * direction
+    return change if won else -change
 
 
 class MatchService:
@@ -33,44 +29,46 @@ class MatchService:
         self._player_champion_repo = player_champion_repo
 
     def finalize_match(self, session, match: Match, result: TeamSide):
-        blue_team = next((t for t in match.teams if t.side == TeamSide.blue), None)
-        red_team = next((t for t in match.teams if t.side == TeamSide.red), None)
+        teams = {team.side: team for team in match.teams}
 
-        if result == TeamSide.blue:
-            winning_team_obj, losing_team_obj = blue_team, red_team
-        else:
-            winning_team_obj, losing_team_obj = red_team, blue_team
+        k_factor = {
+            1: 1,
+            2: 1,
+            3: 5,
+            4: 10,
+            5: 20,
+        }.get(match.mode, 10)
 
-        k_factor = {1: 1, 2: 1, 3: 5, 4: 10, 5: 20}.get(match.mode, 10)
+        for side, team in teams.items():
+            won = side == result
 
-        for player in winning_team_obj.players:
-            point_change = _calculate_elo_change(player.points, losing_team_obj.team_rating, k_factor, True)
-            points_before = player.points
-            player.points += point_change
-            history = PlayerEloHistory(
-                player_id=player.id,
-                match_id=match.id,
-                points_before=points_before,
-                points_after=player.points,
-                change=point_change,
-            )
-            self._elo_repo.create_history(session, history)
+            opponent_team = teams[TeamSide.red if side == TeamSide.blue else TeamSide.blue]
 
-        for player in losing_team_obj.players:
-            point_change = _calculate_elo_change(player.points, winning_team_obj.team_rating, k_factor, False)
-            points_before = player.points
-            player.points += point_change
-            history = PlayerEloHistory(
-                player_id=player.id,
-                match_id=match.id,
-                points_before=points_before,
-                points_after=player.points,
-                change=-point_change,
-            )
-            self._elo_repo.create_history(session, history)
+            for player in team.players:
+                point_change = _calculate_elo_change(
+                    player_rating=player.points,
+                    opponent_team_rating=opponent_team.team_rating,
+                    k_factor=k_factor,
+                    won=won,
+                )
+
+                points_before = player.points
+                player.points += point_change
+
+                self._elo_repo.create_history(
+                    session,
+                    PlayerEloHistory(
+                        player_id=player.id,
+                        match_id=match.id,
+                        points_before=points_before,
+                        points_after=player.points,
+                        change=point_change,
+                    ),
+                )
 
         match.result = result
         self._match_repo.update(session, match)
+
         logger.info(f"Match {match.id} finished. Winner: {result.value}.")
 
     def revert_match(self, session, match: Match):
