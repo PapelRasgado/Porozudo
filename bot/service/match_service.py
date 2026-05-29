@@ -16,9 +16,11 @@ def _calculate_elo_change(
 ) -> int:
     expected_score = 1 / (1 + 10 ** ((opponent_team_rating - player_rating) / 400))
 
-    change = max(1, round(k_factor * (1 - expected_score)))
+    actual_score = 1 if won else 0
 
-    return change if won else -change
+    change = round(k_factor * (actual_score - expected_score))
+
+    return max(1, change) if won else min(-1, change)
 
 
 class MatchService:
